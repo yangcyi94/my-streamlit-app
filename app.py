@@ -34,13 +34,13 @@ if "PEND_MODE" not in st.session_state:
 st.sidebar.header("Setting")
 with st.sidebar.form(key="param_form"):
     st.session_state.PLATEN_RPM = st.number_input(
-        "Platen RPM", min_value=0, value=st.session_state.PLATEN_RPM, step=1
+        "Platen RPM", min_value=0, max_value=200, value=st.session_state.PLATEN_RPM, step=1
     )
     st.session_state.POINTA_RPM = st.number_input(
-        "Head RPM", min_value=0, value=st.session_state.POINTA_RPM, step=1
+        "Head RPM", min_value=0, max_value=200, value=st.session_state.POINTA_RPM, step=1
     )
     st.session_state.POINTA_RADIUS = st.number_input(
-        "PointA Radius (mm)", min_value=1, value=st.session_state.POINTA_RADIUS, step=1
+        "PointA Radius (mm)", min_value=1, max_value=150, value=st.session_state.POINTA_RADIUS, step=1
     )
     st.session_state.STEP_SEC = st.slider(
         "second per STEP", min_value=0.01, max_value=0.1,
