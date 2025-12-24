@@ -1,12 +1,5 @@
-# ==== 基本框架 ====
-streamlit>=1.30,<2.0          # 允許小幅升級，但避免大幅斷裂
-plotly>=5.0,<6.0               # 提供 graph_objects，避免未來大幅變更
-pandas==2.2.1                  # 鎖定版本，確保資料處理一致性
-numpy>=1.26,<2.0               # 科學運算基礎
-
-# ==== 常用工具 ====
-scikit-learn>=1.5               # 若有機器學習需求
-python-dotenv>=1.0.0            # 讀取 .env 檔
-# ==== 開發/測試（可另建 requirements-dev.txt） ====
-# pytest>=8.0
-# black>=24.0
+# 基本框架
+streamlit>=1.30,<2.0
+plotly>=5.0,<6.0
+pandas>=2.0,<3.0
+numpy~=1.26
