@@ -171,10 +171,8 @@ def solve_joint(d_ori, d_J, Jx, Jy):
     return round(xp, 4), round(yp, 4)
 
 
-    return round(xt, 4), round(yt, 4)
-
-K_INIT_X, K_INIT_Y = 450.0, -420.0          # K 點起始座標
-J_INIT_X, J_INIT_Y = calc_axis_rot(K_INIT_X, K_INIT_Y, 45)
+K_INIT_X, K_INIT_Y = 450.0, -420.0          # K, ref point
+J_INIT_X, J_INIT_Y = calc_axis_rot(K_INIT_X, K_INIT_Y, 45) # J, disk arm axis 
 D_ININ_X, D_ININ_Y = solve_joint(DISK_NEAR, DISK_ARM_LENGTH, J_INIT_X, J_INIT_Y)
 D_INIF_X, D_INIF_Y = solve_joint(DISK_FAR, DISK_ARM_LENGTH, J_INIT_X, J_INIT_Y)
 
@@ -202,20 +200,20 @@ for step in range(STEPS_TOTAL):
             r_t = WAFER_FAR - (WAFER_FAR - WAFER_NEAR) * (period_norm - 1.0)     
     # ---- radius_d according to selected mode ----
    
-    # atan2(y, x) 會考慮象限，回傳 -pi 到 pi 之間的值
+
+    # Disk traj. cal.
+    # atan2(y, x), range: -pi ~ pi
     angle_N = math.atan2(D_ININ_Y - J_INIT_Y, D_ININ_X - J_INIT_X)
     angle_F = math.atan2(D_INIF_Y - J_INIT_Y, D_INIF_X - J_INIT_X)
-    # 處理跨越 -pi/pi 邊界的情況 (確保擺動路徑是短弧而非長弧)
+    # filter, make sure short acr path
     diff = angle_F - angle_N
     if diff > math.pi:
         angle_F -= 2 * math.pi
     elif diff < -math.pi:
         angle_F += 2 * math.pi
+
     angle_mid = (angle_N + angle_F) / 2
     amplitude = (angle_F - angle_N) / 2
-
-    
-    
 
     phi_d = 2.0 * math.pi * DISK_PENDULUM_FREQ * step + math.pi
     rad_di = angle_mid - amplitude * math.cos(phi_d)
@@ -336,7 +334,7 @@ fig.add_trace(go.Scatter(name="A2 traj", x=[], y=[], mode="lines",
 # orange line that connects Green → Black → Blue (three points)
 fig.add_trace(go.Scatter(name="A1‑A2", x=[], y=[], mode="lines",
                          line=dict(color="orange", width=1)))
-# ---------- 新增 K、J、DN、DF 的 trace (只顯示最後一步) ----------
+# ---------- K、J、DN、DF, disk  trace (last) ----------
 fig.add_trace(go.Scatter(name="K point", x=[k_x[last]],  y=[k_y[last]],
         mode="markers", marker=dict(size=5, color="magenta")
         ),row=1, col=1)
@@ -405,14 +403,14 @@ for i in range(STEPS_TOTAL):
                 go.Scatter(x=[pa2_x[i], pa_x[i]], y=[pa2_y[i], pa_y[i]], 
                            mode="lines", line=dict(color="rgba(255, 140, 0, 1)", width=1, shape="spline", smoothing=1.3),),
                 
-                # 6. K 點
+                # 6. K 
                 go.Scatter(
                     x=[k_x[i]],
                     y=[k_y[i]],
                     mode="markers",
                     marker=dict(size=5, color="rgba(255, 0, 255, 0)"), #"magenta"
                 ),
-                # 7. J 點
+                # 7. J 
                 go.Scatter(
                     x=[disk_axis_x[i]],
                     y=[disk_axis_y[i]],
@@ -448,6 +446,8 @@ for i in range(STEPS_TOTAL):
                     line=dict(color="blue", width=1, shape="spline", smoothing=1.3),
                     marker=dict(size=4),
                 ),
+
+                #---------below
                 # 12 Dist A2
                 go.Scatter(
                     x=times,
@@ -492,7 +492,7 @@ for i in range(STEPS_TOTAL):
                     )
                 ]
             ),
-            traces=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],   
+            traces=list(range(15)),  
         )
     )
 fig.frames = frames
@@ -537,8 +537,8 @@ updatemenus = [{
 max_dist = max(max(dist_a1), max(dist_a2), max(dist_wa), max(dist_d)) * 1.1   # 10% margin
 
 fig.update_layout(
-    width=1000, height=1000,
-        sliders=sliders,
+    height=800,                 
+    sliders=sliders,
     updatemenus=updatemenus,
    
     xaxis=dict(
@@ -566,7 +566,7 @@ fig.update_layout(
 # 🔟  Display the chart
 # -------------------------------------------------
 
-st.plotly_chart(fig, use_container_width=False)
+st.plotly_chart(fig, use_container_width=True)
 
 
 
