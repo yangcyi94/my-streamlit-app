@@ -4,6 +4,16 @@ from plotly.subplots import make_subplots
 import math
 import pandas as pd
 
+st.set_page_config(layout="wide", page_title="traj")
+
+st.markdown(
+    """
+    <style>
+    .stApp { max-width: 100% !important; padding: 0 20px !important; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 # -------------------------------------------------
 # 1️⃣  Default session‑state values (run only once)
 # ------------------------------------------------- 
@@ -28,9 +38,13 @@ if "SWPS_MIN" not in st.session_state:
 if "PEND_MODE" not in st.session_state:
     st.session_state.PEND_MODE   = "Sine"   # or "Custom"
 
-#if "DSWPS_MIN" not in st.session_state:
-#    st.session_state.DSWPS_MIN    = 10
-st.session_state.DSWPS_MIN    = 5
+if "DISK_SWEEP_START" not in st.session_state:
+    st.session_state.DSWEEP_START = 2.7      # inch
+if "DISK_SWEEP_END" not in st.session_state:
+    st.session_state.DSWEEP_END   = 14.7      # inch
+if "DISK_SWPS_MIN" not in st.session_state:
+    st.session_state.DSWPS_MIN    = 13
+
 
 
 # -------------------------------------------------
@@ -71,10 +85,29 @@ with st.sidebar.form(key="param_form"):
         "Sweep mode", options=["Sine", "Custom(1)"],
         index=0 if st.session_state.PEND_MODE == "Sine" else 1
     )
+
+    st.session_state.DSWEEP_START = st.slider(
+        "Disk_Sweep START (inch)", min_value=1.0, max_value=6.9,
+        value=float(st.session_state.SWEEP_START), step=0.1, format="%.2f"
+    )
+    st.session_state.DSWEEP_END = st.slider(
+        "Disk_Sweep END (inch)", min_value=7.0, max_value=14.9,
+        value=float(st.session_state.SWEEP_END), step=0.1, format="%.2f"
+    )
+    st.session_state.DSWPS_MIN = st.slider(
+        "Disk_Swps per minute", min_value=1, max_value=20,
+        value=int(st.session_state.SWPS_MIN), step=1
+    )
+
     st.session_state.SHOW_GREEN = st.checkbox(
     "Show point 2",
     value=True,
     key="show_green_checkbox"
+    )
+    st.session_state.SHOW_ORANGE = st.checkbox(
+    "Show Disk",
+    value=True,
+    key="show_orange_checkbox"
     )
     submitted = st.form_submit_button("Update")
     if submitted:
@@ -121,8 +154,8 @@ WAFER_MID  = (WAFER_NEAR + WAFER_FAR) / 2.0
 WAFER_AMP  = (WAFER_FAR - WAFER_NEAR) / 2.0
 
 PLATEN_RADIUS = 390   
-DISK_NEAR = 2.7 * 25.4   # 68.58 mm END
-DISK_FAR = 14.7 * 25.4  # 373.38 mm START
+DISK_NEAR = st.session_state.DSWEEP_START * 25.4   # 68.58 mm END
+DISK_FAR = st.session_state.DSWEEP_END  * 25.4  # 373.38 mm START
 DISK_ARM_LENGTH = 610
 
 # -------------------------------------------------
@@ -273,6 +306,10 @@ for step in range(STEPS_TOTAL):
     green_color = "rgba(0,255,0,1)" if show_green else "rgba(0,0,0,0)"
     green_width = 1 if show_green else 0
 
+
+    show_orange = st.session_state.SHOW_ORANGE      # read once
+    orange_color = "rgba(255, 140, 0, 1)" if show_orange else "rgba(0,0,0,0)"
+    gorange_width = 1 if show_orange else 0
 # -------------------------------------------------
 # 7️⃣  Build Plotly figure
 # -------------------------------------------------
@@ -316,7 +353,7 @@ fig.add_trace(
         mode="markers",
         marker=dict(
             size=[5, 5, 5, 5, 5],
-            color=["blue", "black", "black", green_color, "black"],
+            color=["blue", "black", "black", green_color, orange_color],
         ),
     ),row=1, col=1
 )
@@ -348,7 +385,7 @@ fig.add_trace(go.Scatter(name="DF point",  x=[disk_f_x[last]],  y=[disk_f_y[last
         mode="markers", marker=dict(size=5, color="red")
         ),row=1, col=1)
 fig.add_trace(go.Scatter(name="D point",   x=[disk_x[last]],    y=[disk_y[last]],
-        mode="markers", marker=dict(size=5, color= "Yellow")
+        mode="markers", marker=dict(size=5, color= orange_color)
         ),row=1, col=1)
 
 
@@ -386,7 +423,7 @@ for i in range(STEPS_TOTAL):
                     mode="markers",
                     marker=dict(
                         size=[5, 5, 5, 5, 5],
-                        color=["blue", "black", "black", green_color, "black"],
+                        color=["blue", "black", "black", green_color, orange_color],
                     ),
                 ),
                 # 1~4 trajectories up to current step
@@ -434,7 +471,7 @@ for i in range(STEPS_TOTAL):
                 ),
                 # 10 disk
                 go.Scatter(x=disk_x[: i + 1], y=disk_y[: i + 1],
-                           mode="lines", line=dict(color="orange", width=1, shape="spline", smoothing=1.3, dash="dot")
+                           mode="lines", line=dict(color=orange_color, width=1, shape="spline", smoothing=1.3, dash="dot")
                 ),
                 
                 
